@@ -1,0 +1,39 @@
+                                           Таблица "public.factratings"
+ Столбец |       Тип        | Правило сортировки | Допустимость NULL |                По умолчанию                 
+---------+------------------+--------------------+-------------------+---------------------------------------------
+ factid  | integer          |                    | not null          | nextval('factratings_factid_seq'::regclass)
+ dateid  | integer          |                    |                   | 
+ movieid | integer          |                    |                   | 
+ userid  | integer          |                    |                   | 
+ rating  | double precision |                    |                   | 
+Индексы:
+    "factratings_pkey" PRIMARY KEY, btree (factid)
+
+                           Таблица "public.dimmovie"
+   Столбец    |   Тип   | Правило сортировки | Допустимость NULL | По умолчанию 
+--------------+---------+--------------------+-------------------+--------------
+ movieid      | integer |                    | not null          | 
+ title        | text    |                    |                   | 
+ genre        | text    |                    |                   | 
+ yearreleased | integer |                    |                   | 
+Индексы:
+    "dimmovie_pkey" PRIMARY KEY, btree (movieid)
+
+                         Таблица "public.dimuser"
+ Столбец |   Тип   | Правило сортировки | Допустимость NULL | По умолчанию 
+---------+---------+--------------------+-------------------+--------------
+ userid  | integer |                    | not null          | 
+Индексы:
+    "dimuser_pkey" PRIMARY KEY, btree (userid)
+
+                                       Таблица "public.dimdate"
+ Столбец  |   Тип   | Правило сортировки | Допустимость NULL |              По умолчанию               
+----------+---------+--------------------+-------------------+-----------------------------------------
+ dateid   | integer |                    | not null          | nextval('dimdate_dateid_seq'::regclass)
+ fulldate | date    |                    |                   | 
+ year     | integer |                    |                   | 
+ month    | integer |                    |                   | 
+ day      | integer |                    |                   | 
+Индексы:
+    "dimdate_pkey" PRIMARY KEY, btree (dateid)
+

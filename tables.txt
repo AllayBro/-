@@ -1,0 +1,33 @@
+                Список отношений
+ Схема  |        Имя        |   Тип   | Владелец 
+--------+-------------------+---------+----------
+ public | dimdate           | таблица | postgres
+ public | dimmovie          | таблица | postgres
+ public | dimratingcategory | таблица | postgres
+ public | dimuser           | таблица | postgres
+ public | factratings       | таблица | postgres
+ public | temp_movies       | таблица | postgres
+ public | temp_ratings      | таблица | postgres
+(7 строк)
+
+                                           Таблица "public.factratings"
+ Столбец |       Тип        | Правило сортировки | Допустимость NULL |                По умолчанию                 
+---------+------------------+--------------------+-------------------+---------------------------------------------
+ factid  | integer          |                    | not null          | nextval('factratings_factid_seq'::regclass)
+ dateid  | integer          |                    |                   | 
+ movieid | integer          |                    |                   | 
+ userid  | integer          |                    |                   | 
+ rating  | double precision |                    |                   | 
+Индексы:
+    "factratings_pkey" PRIMARY KEY, btree (factid)
+
+                           Таблица "public.dimmovie"
+   Столбец    |   Тип   | Правило сортировки | Допустимость NULL | По умолчанию 
+--------------+---------+--------------------+-------------------+--------------
+ movieid      | integer |                    | not null          | 
+ title        | text    |                    |                   | 
+ genre        | text    |                    |                   | 
+ yearreleased | integer |                    |                   | 
+Индексы:
+    "dimmovie_pkey" PRIMARY KEY, btree (movieid)
+

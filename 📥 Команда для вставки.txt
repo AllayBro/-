@@ -1,0 +1,79 @@
+📥 Команда для вставки
+
+INSERT INTO DimDate (FullDate, Year, Month, Day)
+SELECT DISTINCT
+  TO_TIMESTAMP(timestamp)DATE AS FullDate,
+  EXTRACT(YEAR FROM TO_TIMESTAMP(timestamp))INT,
+  EXTRACT(MONTH FROM TO_TIMESTAMP(timestamp))INT,
+  EXTRACT(DAY FROM TO_TIMESTAMP(timestamp))INT
+FROM temp_ratings;
+
+🔍 Просмотр данных
+
+SELECT  FROM DimDate LIMIT 10;
+
+🎬 2. Наполнение таблицы DimMovie
+
+📥 Команда для вставки с извлечением года выпуска из названия
+
+INSERT INTO DimMovie (MovieID, Title, Genre, YearReleased)
+SELECT
+  movieId,
+  title,
+  genres,
+  CASE
+    WHEN title ~ '(d{4})$'
+      THEN SUBSTRING(title FROM '((d{4}))$')INT
+    ELSE NULL
+  END
+FROM temp_movies
+WHERE movieId NOT IN (SELECT MovieID FROM DimMovie);
+
+🔍 Просмотр
+
+SELECT  FROM DimMovie LIMIT 10;
+
+👤 3. Наполнение таблицы DimUser
+
+📥 Команда для вставки
+
+INSERT INTO DimUser (UserID)
+SELECT DISTINCT userId FROM temp_ratings;
+
+🔍 Просмотр
+
+SELECT  FROM DimUser LIMIT 10;
+
+🟡 4. Наполнение таблицы FactRatings
+
+📥 Пробная вставка 1000 строк
+
+INSERT INTO FactRatings (DateID, MovieID, UserID, Rating)
+SELECT
+  d.DateID,
+  r.movieId,
+  r.userId,
+  r.rating
+FROM temp_ratings r
+JOIN DimDate d ON d.FullDate = TO_TIMESTAMP(r.timestamp)DATE
+JOIN DimMovie m ON m.MovieID = r.movieId
+JOIN DimUser u ON u.UserID = r.userId
+LIMIT 1000;
+
+📥 Полная вставка
+
+INSERT INTO FactRatings (DateID, MovieID, UserID, Rating)
+SELECT
+  d.DateID,
+  r.movieId,
+  r.userId,
+  r.rating
+FROM temp_ratings r
+JOIN DimDate d ON d.FullDate = TO_TIMESTAMP(r.timestamp)DATE
+JOIN DimMovie m ON m.MovieID = r.movieId
+JOIN DimUser u ON u.UserID = r.userId;
+
+🔍 Просмотр
+
+SELECT  FROM FactRatings LIMIT 10;
+

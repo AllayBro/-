@@ -1,0 +1,155 @@
+📥 Команда для вставки
+
+INSERT INTO DimDate (FullDate, Year, Month, Day)
+SELECT DISTINCT
+  TO_TIMESTAMP(timestamp)::DATE AS FullDate,
+  EXTRACT(YEAR FROM TO_TIMESTAMP(timestamp))::INT,
+  EXTRACT(MONTH FROM TO_TIMESTAMP(timestamp))::INT,
+  EXTRACT(DAY FROM TO_TIMESTAMP(timestamp))::INT
+FROM temp_ratings;
+
+INSERT INTO DimMovie (MovieID, Title, Genre, YearReleased)
+SELECT
+  movieId,
+  title,
+  genres,
+  CASE
+    WHEN title ~ '\\(\\d{4}\\)$'
+      THEN CAST(SUBSTRING(title FROM '\\((\\d{4})\\)$') AS INT)
+    ELSE NULL
+  END
+FROM temp_movies
+WHERE movieId NOT IN (SELECT MovieID FROM DimMovie);
+
+
+
+INSERT INTO DimUser (UserID)
+SELECT DISTINCT userId FROM temp_ratings;
+
+INSERT INTO FactRatings (DateID, MovieID, UserID, Rating)
+SELECT
+  d.DateID,
+  r.movieId,
+  r.userId,
+  r.rating
+FROM temp_ratings r
+JOIN DimDate d ON d.FullDate = TO_TIMESTAMP(r.timestamp)::DATE
+JOIN DimMovie m ON m.MovieID = r.movieId
+JOIN DimUser u ON u.UserID = r.userId;
+
+
+
+SELECT
+  dm.Title,
+  COUNT(*) AS RatingCount,
+  ROUND(AVG(fr.Rating)::numeric, 2) AS AvgRating
+FROM FactRatings fr
+JOIN DimMovie dm ON fr.MovieID = dm.MovieID
+GROUP BY dm.MovieID, dm.Title
+HAVING COUNT(*) >= 100
+ORDER BY AvgRating DESC
+LIMIT 100;
+
+
+
+movielens_olap=# \o results1.sql
+movielens_olap=# SELECT
+movielens_olap-#   dm.Genre,
+movielens_olap-#   dd.Year,
+movielens_olap-#   COUNT(*) AS RatingCount,
+movielens_olap-#   ROUND(AVG(fr.Rating)::numeric, 2) AS AvgRating
+movielens_olap-# FROM FactRatings fr
+movielens_olap-# JOIN DimMovie dm ON fr.MovieID = dm.MovieID
+movielens_olap-# JOIN DimDate dd ON fr.DateID = dd.DateID
+movielens_olap-# WHERE dd.Year BETWEEN 2000 AND 2020
+movielens_olap-# GROUP BY dm.Genre, dd.Year
+movielens_olap-# ORDER BY dd.Year, dm.Genre;
+movielens_olap=# \o
+movielens_olap=# SELECT
+movielens_olap-#   fr.UserID,
+movielens_olap-#   COUNT(*) AS RatingsGiven,
+movielens_olap-#   ROUND(AVG(fr.Rating), 2) AS AvgUserRating
+movielens_olap-# FROM FactRatings fr
+movielens_olap-# GROUP BY fr.UserID
+movielens_olap-# ORDER BY RatingsGiven DESC
+movielens_olap-# LIMIT 100;
+ОШИБКА:  функция round(double precision, integer) не существует
+СТРОКА 4:   ROUND(AVG(fr.Rating), 2) AS AvgUserRating
+            ^
+ПОДСКАЗКА:  Функция с данными именем и типами аргументов не найдена. Возможно, вам следует добавить явные приведения типов.
+movielens_olap=# \o results2.sql
+movielens_olap=# SELECT
+movielens_olap-#   fr.UserID,
+movielens_olap-#   COUNT(*) AS RatingsGiven,
+movielens_olap-#   ROUND(AVG(fr.Rating)::numeric, 2) AS AvgUserRating
+movielens_olap-# FROM FactRatings fr
+movielens_olap-# GROUP BY fr.UserID
+movielens_olap-# ORDER BY RatingsGiven DESC
+movielens_olap-# LIMIT 100;
+movielens_olap=# \o
+movielens_olap=# SELECT
+movielens_olap-#   dm.Title,
+movielens_olap-#   dm.YearReleased,
+movielens_olap-#   COUNT(*) AS RatingCount,
+movielens_olap-#   ROUND(AVG(fr.Rating), 2) AS AvgRating
+movielens_olap-# FROM FactRatings fr
+movielens_olap-# JOIN DimMovie dm ON fr.MovieID = dm.MovieID
+movielens_olap-# WHERE dm.YearReleased > 2010
+movielens_olap-# GROUP BY dm.MovieID, dm.Title, dm.YearReleased
+movielens_olap-# HAVING COUNT(*) >= 100
+movielens_olap-# ORDER BY AvgRating DESC
+movielens_olap-# LIMIT 50;
+ОШИБКА:  функция round(double precision, integer) не существует
+СТРОКА 5:   ROUND(AVG(fr.Rating), 2) AS AvgRating
+
+movielens_olap=# \o results4.sql
+movielens_olap=# SELECT
+movielens_olap-#   dd.Year,
+movielens_olap-#   dd.Month,
+movielens_olap-#   COUNT(*) AS RatingCount
+movielens_olap-# FROM FactRatings fr
+movielens_olap-# JOIN DimDate dd ON fr.DateID = dd.DateID
+movielens_olap-# WHERE dd.Year BETWEEN 2015 AND 2020
+movielens_olap-# GROUP BY dd.Year, dd.Month
+movielens_olap-# ORDER BY dd.Year, dd.Month;
+movielens_olap=# \o
+  
+
+
+ Сценарий 1 – Анализ динамики популярности жанров (2000–2020)
+
+SELECT
+  dm.Genre,
+  dd.Year,
+  COUNT(*) AS RatingCount,
+  ROUND(AVG(fr.Rating)::numeric, 2) AS AvgRating
+FROM FactRatings fr
+JOIN DimMovie dm ON fr.MovieID = dm.MovieID
+JOIN DimDate dd ON fr.DateID = dd.DateID
+WHERE dd.Year BETWEEN 2000 AND 2020
+GROUP BY dm.Genre, dd.Year
+ORDER BY dd.Year, dm.Genre;
+
+🔹 Сценарий 2 – Топ-100 активных пользователей
+
+SELECT
+  fr.UserID,
+  COUNT(*) AS RatingsGiven,
+  ROUND(AVG(fr.Rating)::numeric, 2) AS AvgUserRating
+FROM FactRatings fr
+GROUP BY fr.UserID
+ORDER BY RatingsGiven DESC
+LIMIT 100;
+
+🔹 Сценарий 4 – Активность пользователей по годам и месяцам (2015–2020)
+
+SELECT
+  dd.Year,
+  dd.Month,
+  COUNT(*) AS RatingCount
+FROM FactRatings fr
+JOIN DimDate dd ON fr.DateID = dd.DateID
+WHERE dd.Year BETWEEN 2015 AND 2020
+GROUP BY dd.Year, dd.Month
+ORDER BY dd.Year, dd.Month;
+
